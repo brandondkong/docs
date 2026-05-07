@@ -1,0 +1,99 @@
+---
+title: Components
+description: Interactive components available for use in MDX pages.
+order: 3
+---
+
+import Tabs from '@components/docs/Tabs.astro';
+
+Pages that need interactive components can use `.mdx` instead of `.md`. Everything else — frontmatter, headings, prose, code blocks — works identically. Rename any `.md` file to `.mdx` to unlock component imports.
+
+## Tabs
+
+The `Tabs` component renders tabbed content. Each direct child maps to a tab in order — for code blocks, just write them one after another:
+
+````mdx
+import Tabs from '@components/docs/Tabs.astro';
+
+<Tabs tabs={["npm", "pnpm", "yarn"]}>
+  ```bash
+  npm install my-package
+  ```
+  ```bash
+  pnpm add my-package
+  ```
+  ```bash
+  yarn add my-package
+  ```
+</Tabs>
+````
+
+### Package manager tabs
+
+Use `syncKey` to sync across multiple tab groups on the same page. Once you pick a package manager, all groups with the same key update — and the choice persists across page loads.
+
+<Tabs tabs={["npm", "pnpm", "yarn", "bun"]} syncKey="pkg">
+  ```bash
+  npm install my-package
+  ```
+  ```bash
+  pnpm add my-package
+  ```
+  ```bash
+  yarn add my-package
+  ```
+  ```bash
+  bun add my-package
+  ```
+</Tabs>
+
+Switch the tab above and the one below updates with it:
+
+<Tabs tabs={["npm", "pnpm", "yarn", "bun"]} syncKey="pkg">
+  ```bash
+  npm run dev
+  ```
+  ```bash
+  pnpm dev
+  ```
+  ```bash
+  yarn dev
+  ```
+  ```bash
+  bun run dev
+  ```
+</Tabs>
+
+### Language tabs
+
+Omit `syncKey` when the tabs are specific to one section and shouldn't sync globally.
+
+<Tabs tabs={["TypeScript", "JavaScript"]}>
+  ```typescript
+  async function fetchUser(id: string): Promise<User> {
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) throw new Error('Not found');
+      return res.json() as Promise<User>;
+  }
+  ```
+  ```javascript
+  async function fetchUser(id) {
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) throw new Error('Not found');
+      return res.json();
+  }
+  ```
+</Tabs>
+
+## Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `tabs` | `string[]` | Yes | Tab labels in order. Must match the number of children. |
+| `syncKey` | `string` | No | Shared key for syncing tabs across groups on the page. |
+
+## Notes
+
+- Each direct child of `<Tabs>` maps to one tab, in order
+- The `syncKey` value is used as a `localStorage` key — use a short, unique string like `"pkg"` or `"lang"`
+- Tab labels are normalized for syncing: `"TypeScript"` and `"typescript"` are treated as the same label across groups

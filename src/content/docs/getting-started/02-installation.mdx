@@ -1,0 +1,127 @@
+---
+title: Installation
+description: How to fork and set up this documentation template.
+order: 2
+---
+
+import Tabs from '@components/docs/Tabs.astro';
+
+## Fork the template
+
+Click **Use this template** on GitHub to create a new repository from this template. Then clone your new repo:
+
+```bash
+git clone https://github.com/yourusername/your-docs-repo
+cd your-docs-repo
+```
+
+## Install dependencies
+
+<Tabs tabs={["bun", "npm", "pnpm", "yarn"]} syncKey="pkg">
+  ```bash
+  bun install
+  ```
+  ```bash
+  npm install
+  ```
+  ```bash
+  pnpm install
+  ```
+  ```bash
+  yarn install
+  ```
+</Tabs>
+
+## Configure the site
+
+Open `src/config.ts` and update the values for your project:
+
+```ts
+export const SITE = {
+    name: 'My Library',
+    description: 'Documentation for My Library.',
+    version: '1.0.0',
+    githubUrl: 'https://github.com/yourusername/yourrepo',
+    url: 'https://docs.example.com',
+};
+```
+
+Then update the `site` field in `astro.config.mjs` to match your deployed URL — this is used for canonical links and the sitemap.
+
+## Start the dev server
+
+<Tabs tabs={["bun", "npm", "pnpm", "yarn"]} syncKey="pkg">
+  ```bash
+  bun run dev
+  ```
+  ```bash
+  npm run dev
+  ```
+  ```bash
+  pnpm dev
+  ```
+  ```bash
+  yarn dev
+  ```
+</Tabs>
+
+Your docs site will be available at `http://localhost:4321`.
+
+> **Note:** Search is not available in development mode. It requires a production build.
+
+## Build for production
+
+<Tabs tabs={["bun", "npm", "pnpm", "yarn"]} syncKey="pkg">
+  ```bash
+  bun run build
+  ```
+  ```bash
+  npm run build
+  ```
+  ```bash
+  pnpm run build
+  ```
+  ```bash
+  yarn build
+  ```
+</Tabs>
+
+This runs `astro build` followed by `pagefind --site dist`, which indexes your content for search. The output goes to `dist/`.
+
+## Preview the production build
+
+<Tabs tabs={["bun", "npm", "pnpm", "yarn"]} syncKey="pkg">
+  ```bash
+  bun run preview
+  ```
+  ```bash
+  npm run preview
+  ```
+  ```bash
+  pnpm preview
+  ```
+  ```bash
+  yarn preview
+  ```
+</Tabs>
+
+This serves the `dist/` directory locally, including the search index. Use this to verify search works before deploying.
+
+## Deploy
+
+The output is a static site — deploy `dist/` to any static host:
+
+- **Vercel:** connect your repo, set framework to "Other", build command to `bun run build`, output directory to `dist`
+- **Netlify:** same setup, or use the Netlify CLI
+- **GitHub Pages:** use the included GitHub Actions workflow (add one if needed)
+- **Cloudflare Pages:** connect repo, build command `bun run build`, output `dist`
+
+## Add as a submodule
+
+If you're adding this template as a git submodule to an existing monorepo:
+
+```bash
+# From your monorepo root
+git submodule add https://github.com/yourusername/your-docs-repo apps/docs
+git submodule update --init --recursive
+```
