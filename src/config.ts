@@ -7,9 +7,9 @@ export interface SiteConfig {
 }
 
 export const SITE: SiteConfig = {
-    name: 'My Library',
+    name: 'Documentation Template',
     description: 'Beautiful documentation, built with Astro.',
     version: '1.0.0',
-    githubUrl: 'https://github.com/yourusername/yourrepo',
-    url: 'https://docs.example.com',
+    githubUrl: 'https://github.com/brandondkong/docs',
+    url: 'https://docs.kong.ly',
 };
