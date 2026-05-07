@@ -63,7 +63,7 @@ export function buildNav(entries: CollectionEntry<'docs'>[]): NavGroup[] {
             label: sortKey === '_root' ? '' : toLabel(sortKey),
             items: sortedEntries.map((entry) => ({
                 title: entry.data.title,
-                href: `/docs/${getCleanSlug(entry.id)}`,
+                href: `${import.meta.env.BASE_URL}${getCleanSlug(entry.id)}`,
                 id: entry.id,
             })),
         };
