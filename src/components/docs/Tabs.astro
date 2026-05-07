@@ -1,0 +1,197 @@
+---
+/**
+ * Tabbed content component for MDX pages.
+ *
+ * Each direct child of <Tabs> maps to a tab in order.
+ * For single-block tabs (the common case), write code fences directly:
+ *
+ *   import Tabs from '@components/docs/Tabs.astro';
+ *
+ *   <Tabs tabs={["npm", "pnpm", "yarn"]} syncKey="pkg">
+ *     ```bash
+ *     npm install my-package
+ *     ```
+ *     ```bash
+ *     pnpm add my-package
+ *     ```
+ *     ```bash
+ *     yarn add my-package
+ *     ```
+ *   </Tabs>
+ *
+ * For multi-block tabs, wrap each tab's content in a <div>:
+ *
+ *   <Tabs tabs={["Before", "After"]}>
+ *     <div>
+ *       Some explanation text.
+ *       ```js
+ *       old code
+ *       ```
+ *     </div>
+ *     <div>
+ *       Improved explanation.
+ *       ```js
+ *       new code
+ *       ```
+ *     </div>
+ *   </Tabs>
+ *
+ * syncKey: all tab groups sharing the same key persist and sync the
+ *          active tab across the page and across page loads (localStorage).
+ */
+
+interface Props {
+    tabs: string[];
+    syncKey?: string;
+}
+
+const { tabs, syncKey } = Astro.props;
+
+const uid = `tabs-${Math.random().toString(36).slice(2, 7)}`;
+
+function toTabLabel(label: string): string {
+    return label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+---
+
+<div
+    class="tabs-wrapper not-prose"
+    data-tabs-uid={uid}
+    data-sync-key={syncKey}
+>
+    <div role="tablist" class="tabs-list" aria-label="Tabs">
+        {
+            tabs.map((label, i) => (
+                <button
+                    role="tab"
+                    id={`${uid}-tab-${i}`}
+                    aria-selected={i === 0}
+                    data-tab-index={String(i)}
+                    data-tab-label={toTabLabel(label)}
+                    class="tab-btn"
+                >
+                    {label}
+                </button>
+            ))
+        }
+    </div>
+
+    <!-- Children are split into panels by the script below -->
+    <div class="tabs-content" data-tabs-content>
+        <slot />
+    </div>
+</div>
+
+<script>
+    function initTabs() {
+        document
+            .querySelectorAll<HTMLElement>('[data-tabs-uid]:not([data-tabs-init])')
+            .forEach((wrapper) => {
+                wrapper.dataset.tabsInit = '1';
+
+                const uid = wrapper.dataset.tabsUid!;
+                const syncKey = wrapper.dataset.syncKey;
+                const buttons = Array.from(
+                    wrapper.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+                );
+                const content = wrapper.querySelector<HTMLElement>(
+                    '[data-tabs-content]',
+                )!;
+
+                // Wrap each direct child element into a named tabpanel
+                const panels = Array.from(content.children).map((child, i) => {
+                    const panel = document.createElement('div');
+                    panel.setAttribute('role', 'tabpanel');
+                    panel.id = `${uid}-panel-${i}`;
+                    panel.setAttribute('aria-labelledby', `${uid}-tab-${i}`);
+                    panel.classList.add('tab-panel');
+                    panel.hidden = i !== 0;
+                    content.insertBefore(panel, child);
+                    panel.appendChild(child);
+                    return panel;
+                });
+
+                // Wire up aria-controls now that panel IDs exist
+                buttons.forEach((btn, i) => {
+                    btn.setAttribute('aria-controls', `${uid}-panel-${i}`);
+                });
+
+                function activateTab(index: number, persist = true) {
+                    buttons.forEach((btn, i) =>
+                        btn.setAttribute('aria-selected', String(i === index)),
+                    );
+                    panels.forEach((panel, i) => (panel.hidden = i !== index));
+
+                    if (syncKey && persist) {
+                        const label =
+                            buttons[index]?.dataset.tabLabel ?? '';
+                        localStorage.setItem(`tabs:${syncKey}`, label);
+                        syncSiblings(syncKey, label);
+                    }
+                }
+
+                function syncSiblings(key: string, label: string) {
+                    document
+                        .querySelectorAll<HTMLElement>(
+                            `[data-sync-key="${key}"][data-tabs-init]`,
+                        )
+                        .forEach((sibling) => {
+                            if (sibling === wrapper) return;
+                            const sibBtns = Array.from(
+                                sibling.querySelectorAll<HTMLButtonElement>(
+                                    '[role="tab"]',
+                                ),
+                            );
+                            const sibPanels = Array.from(
+                                sibling.querySelectorAll<HTMLElement>(
+                                    '[role="tabpanel"]',
+                                ),
+                            );
+                            const idx = sibBtns.findIndex(
+                                (b) => b.dataset.tabLabel === label,
+                            );
+                            if (idx === -1) return;
+                            sibBtns.forEach((b, i) =>
+                                b.setAttribute(
+                                    'aria-selected',
+                                    String(i === idx),
+                                ),
+                            );
+                            sibPanels.forEach(
+                                (p, i) => (p.hidden = i !== idx),
+                            );
+                        });
+                }
+
+                // Restore persisted tab
+                if (syncKey) {
+                    const saved = localStorage.getItem(`tabs:${syncKey}`);
+                    if (saved) {
+                        const idx = buttons.findIndex(
+                            (b) => b.dataset.tabLabel === saved,
+                        );
+                        if (idx !== -1) activateTab(idx, false);
+                    }
+                }
+
+                buttons.forEach((btn, i) => {
+                    btn.addEventListener('click', () => activateTab(i));
+                    btn.addEventListener('keydown', (e) => {
+                        let next = i;
+                        if (e.key === 'ArrowRight')
+                            next = (i + 1) % buttons.length;
+                        else if (e.key === 'ArrowLeft')
+                            next = (i - 1 + buttons.length) % buttons.length;
+                        else if (e.key === 'Home') next = 0;
+                        else if (e.key === 'End') next = buttons.length - 1;
+                        else return;
+                        e.preventDefault();
+                        activateTab(next);
+                        buttons[next].focus();
+                    });
+                });
+            });
+    }
+
+    initTabs();
+</script>
