@@ -1,0 +1,62 @@
+---
+import '../styles/global.css';
+import { SITE } from '../config';
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <script is:inline>
+            (function () {
+                var stored = localStorage.getItem('docs-theme');
+                var prefersDark = window.matchMedia(
+                    '(prefers-color-scheme: dark)',
+                ).matches;
+                var theme = stored ?? (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            })();
+        </script>
+
+        <title>404 — {SITE.name}</title>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    </head>
+    <body class="bg-background text-foreground min-h-svh flex flex-col">
+        <header class="sticky top-0 z-50 flex h-16 items-center border-b border-border bg-background/95 backdrop-blur-sm px-6 sm:px-10">
+            <a href="/" class="text-base font-bold tracking-tight uppercase">
+                {SITE.name}
+            </a>
+        </header>
+
+        <main class="flex-1 flex flex-col items-start justify-center px-6 sm:px-16 md:px-24 py-24 max-w-4xl mx-auto w-full">
+            <h1
+                class="font-semibold leading-none tracking-tight text-border mb-4 select-none"
+                style="font-size: clamp(7rem, 10vw, 18rem);"
+            >
+                404
+            </h1>
+            <p class="text-xl font-semibold tracking-tight mb-6">
+                Page not found
+            </p>
+            <p class="text-xl text-muted leading-relaxed mb-10 max-w-md">
+                This page doesn't exist or has been moved. Check the URL or head back to the docs.
+            </p>
+            <div class="flex flex-wrap gap-3">
+                <a
+                    href="/docs"
+                    class="px-6 py-3 text-sm font-medium bg-foreground text-background hover:opacity-80 transition-opacity duration-(--duration-fast)"
+                >
+                    Browse docs
+                </a>
+                <a
+                    href="/"
+                    class="px-6 py-3 text-sm font-medium border border-border hover:border-foreground transition-colors duration-(--duration-fast)"
+                >
+                    Go home
+                </a>
+            </div>
+        </main>
+    </body>
+</html>
