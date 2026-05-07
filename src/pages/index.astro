@@ -24,12 +24,12 @@ const firstDocHref = '/docs/getting-started/introduction';
 
         <title>{SITE.name} — Documentation</title>
         <meta name="description" content={SITE.description} />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
     </head>
     <body class="bg-background text-foreground min-h-svh flex flex-col">
         <!-- Minimal nav -->
         <header class="sticky top-0 z-50 flex h-16 items-center border-b border-border bg-background/95 backdrop-blur-sm px-6 sm:px-10">
-            <a href="/" class="text-base font-bold tracking-tight uppercase">
+            <a href={import.meta.env.BASE_URL} class="text-base font-bold tracking-tight uppercase">
                 {SITE.name}
             </a>
             <nav class="ml-auto flex items-center gap-4 text-sm text-muted">
