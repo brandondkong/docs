@@ -1,0 +1,61 @@
+---
+import type { NavGroup } from '../../lib/nav';
+
+interface Props {
+    navGroups: NavGroup[];
+    currentPath: string;
+}
+
+const { navGroups, currentPath } = Astro.props;
+---
+
+<aside
+    id="sidebar"
+    aria-label="Documentation navigation"
+    class="
+        fixed top-[64px] left-0 bottom-0 z-40 w-64
+        -translate-x-full md:translate-x-0
+        transition-transform duration-(--duration-normal)
+        md:sticky md:top-[var(--header-height)] md:h-[calc(100svh-var(--header-height))]
+        md:transition-none md:relative md:bottom-auto md:z-auto
+        overflow-y-auto overscroll-contain
+        bg-background border-r border-border
+        shrink-0
+    "
+    data-pagefind-ignore
+>
+    <nav class="px-4 py-6">
+        {
+            navGroups.map((group) => (
+                <div class="mb-6">
+                    {group.label && (
+                        <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-widest text-subtle">
+                            {group.label}
+                        </p>
+                    )}
+                    <ul class="flex flex-col gap-0.5">
+                        {group.items.map((item) => {
+                            const isActive = item.href === currentPath;
+                            return (
+                                <li>
+                                    <a
+                                        href={item.href}
+                                        aria-current={isActive ? 'page' : undefined}
+                                        class={[
+                                            'block px-2 py-1.5 text-sm rounded-none transition-colors duration-(--duration-fast)',
+                                            isActive
+                                                ? 'bg-surface text-foreground font-medium'
+                                                : 'text-muted hover:text-foreground hover:bg-surface',
+                                        ].join(' ')}
+                                    >
+                                        {item.title}
+                                    </a>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            ))
+        }
+    </nav>
+</aside>
