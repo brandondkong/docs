@@ -1,0 +1,50 @@
+---
+import type { NavGroup } from '../../lib/nav';
+
+interface Props {
+    navGroups: NavGroup[];
+    currentPath: string;
+}
+
+const { navGroups, currentPath } = Astro.props;
+
+let groupLabel: string | null = null;
+let pageTitle: string | null = null;
+
+for (const group of navGroups) {
+    const match = group.items.find((item) => item.href === currentPath);
+    if (match) {
+        groupLabel = group.label || null;
+        pageTitle = match.title;
+        break;
+    }
+}
+---
+
+{
+    (groupLabel || pageTitle) && (
+        <nav aria-label="Breadcrumb">
+            <ol class="flex items-center gap-1.5 text-sm text-muted">
+                <li>
+                    <a href="/docs" class="hover:text-foreground transition-colors duration-(--duration-fast)">
+                        Docs
+                    </a>
+                </li>
+                {groupLabel && (
+                    <>
+                        <li aria-hidden="true" class="text-subtle">/</li>
+                        <li>{groupLabel}</li>
+                    </>
+                )}
+                {pageTitle && (
+                    <>
+                        <li aria-hidden="true" class="text-subtle">/</li>
+                        <li class="text-foreground font-medium truncate" aria-current="page">
+                            {pageTitle}
+                        </li>
+                    </>
+                )}
+            </ol>
+        </nav>
+    )
+}

@@ -1,0 +1,157 @@
+---
+---
+
+<!-- Search modal — controlled by Header.astro script -->
+<div
+    id="search-modal"
+    role="dialog"
+    aria-label="Search documentation"
+    aria-modal="true"
+    hidden
+    class="fixed inset-0 z-[60] flex items-start justify-center pt-[20vh] px-4"
+>
+    <!-- Backdrop -->
+    <div
+        id="search-backdrop"
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+    >
+    </div>
+
+    <!-- Panel -->
+    <div
+        class="relative z-10 w-full max-w-xl bg-background border border-border shadow-none"
+    >
+        <!-- Input row -->
+        <div class="flex items-center border-b border-border">
+            <svg
+                class="ml-4 mr-3 shrink-0 text-muted"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+            >
+                <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.25"/>
+                <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+            </svg>
+            <input
+                id="search-input"
+                type="search"
+                placeholder="Search..."
+                autocomplete="off"
+                class="flex-1 bg-transparent py-3.5 text-sm text-foreground placeholder:text-muted outline-none"
+            />
+            <button
+                id="search-close"
+                class="mr-3 text-xs text-muted hover:text-foreground border border-border px-1.5 py-0.5 transition-colors duration-(--duration-fast)"
+                aria-label="Close search"
+            >
+                Esc
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div id="search-results" class="max-h-[60vh] overflow-y-auto py-2">
+            <p class="px-4 py-6 text-sm text-muted text-center" id="search-placeholder">
+                Type to search...
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('search-modal')!;
+    const backdrop = document.getElementById('search-backdrop')!;
+    const input = document.getElementById('search-input') as HTMLInputElement;
+    const closeBtn = document.getElementById('search-close')!;
+    const resultsContainer = document.getElementById('search-results')!;
+    const placeholder = document.getElementById('search-placeholder')!;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let pagefind: any = null;
+    const isDevMode = import.meta.env.DEV;
+
+    if (!isDevMode) {
+        try {
+            // @ts-expect-error — /pagefind/ is a virtual path generated at build time
+            pagefind = await import('/pagefind/pagefind.js');
+            await pagefind.init();
+        } catch {
+            // Pagefind failed to load even in production — search will degrade gracefully
+        }
+    }
+
+    function closeModal() {
+        modal.setAttribute('hidden', '');
+        input.value = '';
+        resultsContainer.innerHTML = '';
+        resultsContainer.appendChild(placeholder);
+        placeholder.textContent = 'Type to search...';
+    }
+
+    backdrop.addEventListener('click', closeModal);
+    closeBtn.addEventListener('click', closeModal);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.hasAttribute('hidden')) {
+            closeModal();
+        }
+    });
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => search(input.value.trim()), 200);
+    });
+
+    async function search(query: string) {
+        if (!query) {
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(placeholder);
+            placeholder.textContent = 'Type to search...';
+            return;
+        }
+
+        if (isDevMode) {
+            placeholder.textContent =
+                'Search is not available in development mode. Run bun run build to enable it.';
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(placeholder);
+            return;
+        }
+
+        placeholder.textContent = 'Searching...';
+
+        const results = await pagefind.search(query);
+        const data = await Promise.all(
+            results.results.slice(0, 8).map((r: { data: () => Promise<unknown> }) => r.data()),
+        );
+
+        if (data.length === 0) {
+            placeholder.textContent = `No results for "${query}"`;
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(placeholder);
+            return;
+        }
+
+        const html = data
+            .map(
+                (result: { url: string; meta: { title: string }; excerpt: string }) => `
+                <a href="${result.url}" class="block px-4 py-3 hover:bg-surface border-b border-border last:border-0 transition-colors duration-100 group">
+                    <p class="text-sm font-medium text-foreground group-hover:text-foreground mb-1 tracking-tight">
+                        ${result.meta?.title ?? 'Untitled'}
+                    </p>
+                    <p class="text-xs text-muted leading-relaxed line-clamp-2">${result.excerpt}</p>
+                </a>
+            `,
+            )
+            .join('');
+
+        resultsContainer.innerHTML = html;
+
+        resultsContainer.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', closeModal);
+        });
+    }
+</script>
