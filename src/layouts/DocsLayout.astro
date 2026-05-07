@@ -1,0 +1,143 @@
+---
+import '../styles/global.css';
+import Header from '../components/layout/Header.astro';
+import Sidebar from '../components/layout/Sidebar.astro';
+import TOC from '../components/layout/TOC.astro';
+import Breadcrumb from '../components/docs/Breadcrumb.astro';
+import PageNav from '../components/docs/PageNav.astro';
+import Search from '../components/docs/Search.astro';
+import { getCollection } from 'astro:content';
+import { buildNav, getAdjacentPages } from '../lib/nav';
+import { SITE } from '../config';
+
+interface Props {
+    title: string;
+    description?: string;
+    headings: { depth: number; slug: string; text: string }[];
+}
+
+const { title, description = SITE.description, headings } = Astro.props;
+
+const pageTitle = `${title} — ${SITE.name}`;
+const canonicalUrl = new URL(Astro.url.pathname, SITE.url).href;
+const currentPath = Astro.url.pathname;
+
+const allEntries = await getCollection('docs', ({ data }) => !data.hidden);
+const navGroups = buildNav(allEntries);
+const { prev, next } = getAdjacentPages(navGroups, currentPath);
+
+const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <!-- Prevent flash of unstyled theme — must be first script in head -->
+        <script is:inline>
+            (function () {
+                var stored = localStorage.getItem('docs-theme');
+                var prefersDark = window.matchMedia(
+                    '(prefers-color-scheme: dark)',
+                ).matches;
+                var theme = stored ?? (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            })();
+        </script>
+
+        <title>{pageTitle}</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={canonicalUrl} />
+
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:site_name" content={SITE.name} />
+
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    </head>
+    <body class="min-h-svh bg-background text-foreground">
+        <a
+            href="#main"
+            class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-foreground focus:text-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
+        >
+            Skip to main content
+        </a>
+
+        <Header />
+
+        <div class="flex" style={`min-height: calc(100svh - var(--header-height))`}>
+            <!-- Sidebar backdrop (mobile) -->
+            <div
+                id="sidebar-backdrop"
+                class="fixed inset-0 z-30 bg-black/50 opacity-0 pointer-events-none transition-opacity duration-(--duration-fast) md:hidden"
+                aria-hidden="true"
+            >
+            </div>
+
+            <Sidebar navGroups={navGroups} currentPath={currentPath} />
+
+            <main
+                id="main"
+                class="flex-1 min-w-0"
+                data-pagefind-body
+            >
+                <div class="mx-auto max-w-5xl px-6 sm:px-10 py-10 lg:grid lg:grid-cols-[1fr_220px] lg:gap-12">
+                    <div class="min-w-0">
+                        <Breadcrumb
+                            navGroups={navGroups}
+                            currentPath={currentPath}
+                        />
+
+                        <article class="prose mt-6 max-w-none">
+                            <h1 data-pagefind-meta="title">{title}</h1>
+                            <slot />
+                        </article>
+
+                        <PageNav prev={prev} next={next} />
+                    </div>
+
+                    {
+                        tocHeadings.length > 0 && (
+                            <aside
+                                class="hidden lg:block"
+                                data-pagefind-ignore
+                            >
+                                <div class="sticky py-1" style="top: calc(var(--header-height) + 2rem)">
+                                    <TOC headings={tocHeadings} />
+                                </div>
+                            </aside>
+                        )
+                    }
+                </div>
+            </main>
+        </div>
+
+        <Search />
+
+        <!-- Inject copy buttons into code blocks -->
+        <script>
+            function addCopyButtons() {
+                document.querySelectorAll('pre').forEach((pre) => {
+                    if (pre.querySelector('.copy-btn')) return;
+                    const btn = document.createElement('button');
+                    btn.className = 'copy-btn';
+                    btn.textContent = 'Copy';
+                    btn.setAttribute('aria-label', 'Copy code');
+                    btn.addEventListener('click', () => {
+                        const code = pre.querySelector('code');
+                        if (!code) return;
+                        navigator.clipboard.writeText(code.innerText).then(() => {
+                            btn.textContent = 'Copied!';
+                            setTimeout(() => (btn.textContent = 'Copy'), 2000);
+                        });
+                    });
+                    pre.appendChild(btn);
+                });
+            }
+            addCopyButtons();
+        </script>
+    </body>
+</html>
