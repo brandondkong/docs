@@ -1,8 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
-import DocsLayout from '../../layouts/DocsLayout.astro';
-import { getCleanSlug } from '../../lib/nav';
+import DocsLayout from '../layouts/DocsLayout.astro';
+import { getCleanSlug } from '../lib/nav';
 
 export const getStaticPaths: GetStaticPaths = async () => {
     const entries = await getCollection('docs', ({ data }) => !data.hidden);
