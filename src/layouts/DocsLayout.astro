@@ -121,7 +121,15 @@ const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
         <script>
             function addCopyButtons() {
                 document.querySelectorAll('pre').forEach((pre) => {
-                    if (pre.querySelector('.copy-btn')) return;
+                    if (pre.parentElement?.classList.contains('code-block-wrapper')) return;
+
+                    // Wrap the pre so the button sits outside the scrolling element
+                    // and stays pinned to the top-right when the code scrolls horizontally.
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'code-block-wrapper';
+                    pre.parentNode?.insertBefore(wrapper, pre);
+                    wrapper.appendChild(pre);
+
                     const btn = document.createElement('button');
                     btn.className = 'copy-btn';
                     btn.textContent = 'Copy';
@@ -134,7 +142,7 @@ const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
                             setTimeout(() => (btn.textContent = 'Copy'), 2000);
                         });
                     });
-                    pre.appendChild(btn);
+                    wrapper.appendChild(btn);
                 });
             }
             addCopyButtons();

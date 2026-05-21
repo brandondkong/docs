@@ -100,16 +100,24 @@ button:focus-visible,
     text-decoration: var(--shiki-dark-text-decoration) !important;
 }
 
-/* Code block container */
-.prose pre {
+/* Code block container — wrapper provides the positioning context so the
+   copy button stays pinned even when the inner <pre> scrolls horizontally. */
+.prose .code-block-wrapper {
     position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.prose pre {
     overflow-x: auto;
     border-radius: 0;
     border: 1px solid var(--border);
-    margin-bottom: 1.5rem;
     padding: 1.25rem 1.5rem;
     font-size: 0.875rem;
     line-height: 1.7;
+}
+
+.prose .code-block-wrapper pre {
+    margin-bottom: 0;
 }
 
 .prose pre code {
@@ -119,7 +127,8 @@ button:focus-visible,
     border-radius: 0;
 }
 
-/* Copy button (injected by script in DocsLayout) */
+/* Copy button (injected by script in DocsLayout) — sibling of <pre>, not a child,
+   so horizontal scroll inside the <pre> doesn't carry it off-screen. */
 .copy-btn {
     position: absolute;
     top: 0.5rem;
@@ -137,6 +146,7 @@ button:focus-visible,
     opacity: 0;
     transition: opacity 0.15s ease;
     line-height: 1.4;
+    z-index: 1;
 }
 
 [data-theme='dark'] .copy-btn {
@@ -145,7 +155,7 @@ button:focus-visible,
     border-color: var(--border);
 }
 
-.prose pre:hover .copy-btn {
+.prose .code-block-wrapper:hover .copy-btn {
     opacity: 1;
 }
 
@@ -432,6 +442,10 @@ button:focus-visible,
     border: none !important;
     border-radius: 0 !important;
     margin-bottom: 0 !important;
+}
+
+.tab-panel .code-block-wrapper {
+    margin-bottom: 0;
 }
 
 /* ================================================================
