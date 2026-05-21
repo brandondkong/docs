@@ -73,8 +73,13 @@
 
     if (!isDevMode) {
         try {
-            // @ts-expect-error — pagefind is a virtual path generated at build time
-            pagefind = await import(/* @vite-ignore */ `${import.meta.env.BASE_URL.replace(/\/$/, '')}/pagefind/pagefind.js`);
+            // pagefind.js is generated after `astro build` runs, so it isn't visible to
+            // Vite/Rollup's static analysis. Hide the import behind `new Function` to
+            // prevent Vite from wrapping it in __VITE_PRELOAD__ (which throws at runtime
+            // because the placeholder is never replaced for unresolvable imports).
+            const pagefindUrl = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/pagefind/pagefind.js`;
+            const importPagefind = new Function('u', 'return import(u)') as (u: string) => Promise<{ init: () => Promise<void>; search: (q: string) => Promise<{ results: { data: () => Promise<unknown> }[] }> }>;
+            pagefind = await importPagefind(pagefindUrl);
             await pagefind.init();
         } catch {
             // Pagefind failed to load even in production — search will degrade gracefully
@@ -137,14 +142,20 @@
 
         const html = data
             .map(
-                (result: { url: string; meta: { title: string }; excerpt: string }) => `
-                <a href="${result.url}" class="block px-4 py-3 hover:bg-surface border-b border-border last:border-0 transition-colors duration-100 group">
+                (result: { url: string; meta: { title: string }; excerpt: string }) => {
+                    // Pagefind auto-prepends its basePath (derived from pagefind.js's URL)
+                    // to result URLs, so they already include the Astro `base`. We only
+                    // need to strip the trailing slash to match `trailingSlash: 'never'`.
+                    const href = result.url.replace(/\/$/, '');
+                    return `
+                <a href="${href}" class="block px-4 py-3 hover:bg-surface border-b border-border last:border-0 transition-colors duration-100 group">
                     <p class="text-sm font-medium text-foreground group-hover:text-foreground mb-1 tracking-tight">
                         ${result.meta?.title ?? 'Untitled'}
                     </p>
                     <p class="text-xs text-muted leading-relaxed line-clamp-2">${result.excerpt}</p>
                 </a>
-            `,
+            `;
+                },
             )
             .join('');
 
